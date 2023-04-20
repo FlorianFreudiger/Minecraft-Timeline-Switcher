@@ -1,9 +1,9 @@
 # Automatic Minecraft update section
 [updates]
 
-# Version directory names, in the order they should be progressed through
+# Timeline directory names, in the order they should be progressed through
 # They do not need to be version numbers, the minecraft version will be extracted from the packwiz pack.toml
-versions = [
+timeline = [
     #"1.0", # 1.0 and 1.1 do not offer an official server download anymore
     #"1.1",
     "1.2.5",

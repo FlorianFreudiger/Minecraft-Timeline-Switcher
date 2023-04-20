@@ -6,7 +6,7 @@ from packaging import version
 
 
 class Config:
-    versions: list[str]
+    timeline: list[str]
     interval: int
     start_time: str
     upgrades: dict[version.Version, str]
@@ -20,27 +20,27 @@ class Config:
 
     def __init__(self, config: dict) -> None:
         updates = config["updates"]
-        self.versions = updates["versions"]
+        self.timeline = updates["timeline"]
         self.interval = updates["interval"]
         self.start_time = updates["start_time"]
         self.upgrades = {}
         for upgrade in config["upgrades"]:
             self.upgrades[version.parse(upgrade["minecraft_version"])] = upgrade["server_image"]
 
-    def check_versions(self):
-        for pack in self.versions:
-            version_path = os.path.join("versions", pack)
-            pack_toml_path = os.path.join(version_path, "pack.toml")
-            if not os.path.isdir(version_path):
-                print(f"Version {pack} not found in versions directory.")
+    def check_variants(self):
+        for variant in self.timeline:
+            variant_path = os.path.join("timeline", variant)
+            pack_toml_path = os.path.join(variant_path, "pack.toml")
+            if not os.path.isdir(variant_path):
+                print(f"Variant {variant} not found in timeline directory.")
                 exit(1)
             if not os.path.isfile(pack_toml_path):
-                print(f"pack.toml not found in {version_path} directory.")
+                print(f"pack.toml not found in {variant_path} directory.")
                 exit(1)
 
 
 def get_minecraft_version(variant: str) -> version.Version:
-    pack_toml_path = os.path.join("versions", variant, "pack.toml")
+    pack_toml_path = os.path.join("timeline", variant, "pack.toml")
 
     with open(pack_toml_path, "rb") as pack_toml_file:
         pack_toml = tomllib.load(pack_toml_file)
@@ -69,13 +69,13 @@ def generate_compose(minecraft_version: version.Version, server_image: str) -> s
 
 def main() -> None:
     config = Config.load_from_file("config.toml")
-    config.check_versions()
+    config.check_variants()
 
     if not os.path.isfile("docker-compose-template.yml"):
         print("docker-compose-template.yml missing.")
         exit(1)
 
-    minecraft_version = get_minecraft_version(config.versions[0])
+    minecraft_version = get_minecraft_version(config.timeline[0])
     server_image = get_server_image(config, minecraft_version)
     compose = generate_compose(minecraft_version, server_image)
     print(compose)
