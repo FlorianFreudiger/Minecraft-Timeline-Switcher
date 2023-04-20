@@ -15,8 +15,8 @@ services:
             - EULA=FALSE
 
             # Server type
-            - TYPE=VANILLA
-            - VERSION={minecraft_version}
+            - TYPE={server_type}
+            - VERSION={server_version}
 
             # Start the server with --forceUpgrade to ensure the whole world is converted every upgrade
             # If disabled, very old unconverted chunks may not be able to load in modern versions
