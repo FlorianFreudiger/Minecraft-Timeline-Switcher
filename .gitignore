@@ -156,3 +156,6 @@ cython_debug/
 # IDE directories
 .vscode/
 .idea/
+
+# Secrets
+secrets.toml

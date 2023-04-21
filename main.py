@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import os
 import tomllib
+from typing import Any
+
+from portainer import Portainer
 
 
 class Variant:
@@ -40,18 +43,16 @@ class Config:
     interval: int
     start_time: str
 
+    def __init__(self, interval: int, start_time: str, timeline: list[Variant]) -> None:
+        self.interval = interval
+        self.start_time = start_time
+        self.timeline = timeline
+
     @staticmethod
-    def load_from_file(file: str) -> Config:
-        with open(file, "rb") as config_file:
-            config = tomllib.load(config_file)
-
-            return Config(config)
-
-    def __init__(self, config: dict) -> None:
-        updates = config["updates"]
-        self.interval = updates["interval"]
-        self.start_time = updates["start_time"]
-        self.timeline = []
+    def from_config(config: dict[str, Any]) -> Config:
+        interval = config["updates"]["interval"]
+        start_time = config["updates"]["start_time"]
+        timeline = []
 
         pack = None
         server_image = None
@@ -71,17 +72,31 @@ class Config:
             if pack is None or server_image is None or server_type is None or server_version is None:
                 print("Missing variant information. Make sure the first variant has at least a pack and server_image.")
                 exit(1)
-            self.timeline.append(Variant(pack, server_image, server_type, server_version))
+            timeline.append(Variant(pack, server_image, server_type, server_version))
+
+        return Config(interval, start_time, timeline)
+
+
+def load_toml(file: str) -> dict[str, Any]:
+    with open(file, "rb") as config_file:
+        return tomllib.load(config_file)
 
 
 def main() -> None:
-    config = Config.load_from_file("config.toml")
+    config_dict = load_toml("config.toml")
+    config = Config.from_config(config_dict)
+
+    compose = config.timeline[0].generate_compose()
+
+    if config_dict["portainer"]["enable"]:
+        secrets_dict = load_toml("secrets.toml")
+        portainer = Portainer.from_config(config_dict, secrets_dict)
+        portainer.update_stack(compose)
 
     if not os.path.isfile("docker-compose-template.yml"):
         print("docker-compose-template.yml missing.")
         exit(1)
 
-    compose = config.timeline[0].generate_compose()
     print(compose)
 
 

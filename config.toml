@@ -1,7 +1,8 @@
 # Automatic Minecraft update section
 [updates]
 
-# Run every x minutes, ensure this is enough time to start the server and finish world conversion, 1440 min = 24 hours
+# Run every x minutes, ensure this is enough time to stop, download, start the server and finish world conversion
+# 1440 min = 24 hours
 interval = 1440
 
 # Starting time of day, in 24 hour format
@@ -78,3 +79,11 @@ pack = "1.18.2"
 
 [[variant]]
 pack = "1.19.4"
+
+
+# Automatically update a stack on your portainer instance
+# Requires setting API key in secrets.toml (copy the secrets.toml.example file)
+[portainer]
+enable = false
+hostname = "your-portainer-host.com" # omit "https://", it will be included automatically (your server must use https)
+stack_name = "minecraft-timeline-server" # Name of EXISTING stack, create a dummy stack first
