@@ -5,37 +5,9 @@ import tomllib
 import logging
 from typing import Any
 
+from models import Variant
+from packwiz import PackwizSyncer
 from portainer import Portainer
-
-
-class Variant:
-    pack: str
-    server_image: str
-    server_type: str
-    server_version: str
-
-    def __init__(self, pack: str, server_image: str, server_type: str, server_version: str) -> None:
-        self.pack = pack
-        pack_path = os.path.join("../config/packwiz", pack)
-        if not os.path.isdir(pack_path):
-            raise FileNotFoundError(f"Pack {pack} not found in packwiz directory.")
-
-        self.server_image = server_image
-        self.server_type = server_type
-
-        if server_version == "packwiz":
-            with open(os.path.join(pack_path, "pack.toml"), "rb") as pack_toml_file:
-                pack_toml = tomllib.load(pack_toml_file)
-                self.server_version = pack_toml["versions"]["minecraft"]
-        else:
-            self.server_version = server_version
-
-    def generate_compose(self) -> str:
-        with open("../config/docker-compose-template.yml", "r") as template:
-            compose = template.read()
-            return compose.format(server_image=self.server_image,
-                                  server_type=self.server_type,
-                                  server_version=self.server_version)
 
 
 class Config:
@@ -88,19 +60,23 @@ def main() -> None:
 
     config = Config.from_config(config_dict)
 
-    compose = config.timeline[0].generate_compose()
+    update_targets = []
+
+    if config_dict["packwiz"]["enable"]:
+        update_targets.append(PackwizSyncer.from_config(config_dict))
 
     if config_dict["portainer"]["enable"]:
         secrets_dict = load_toml("../config/secrets.toml")
-        portainer = Portainer.from_config(config_dict, secrets_dict)
-        portainer.update_stack(compose)
+        update_targets.append(Portainer.from_config(config_dict, secrets_dict))
 
     logging.debug("Loading configs complete.")
 
     if not os.path.isfile("../config/docker-compose-template.yml"):
         raise FileNotFoundError("docker-compose-template.yml missing.")
 
-    print(compose)
+    variant = config.timeline[0]
+    for target in update_targets:
+        target.update_variant(variant)
 
 
 if __name__ == "__main__":

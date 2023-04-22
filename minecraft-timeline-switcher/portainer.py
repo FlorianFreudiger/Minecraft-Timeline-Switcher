@@ -4,8 +4,10 @@ import requests
 import logging
 from typing import Any
 
+from models import UpdateTarget, Variant
 
-class Portainer:
+
+class Portainer(UpdateTarget):
     hostname: str
     stack_name: str
     headers: dict[str, str]
@@ -37,6 +39,9 @@ class Portainer:
         response = requests.put(url, headers=self.headers, json=body, params=params)
         response.raise_for_status()
         return response.json()
+
+    def update_variant(self, variant: Variant) -> None:
+        self.update_stack(variant.generate_compose())
 
     def update_stack(self, compose: str) -> None:
         logging.info(f"Updating Portainer stack {self.stack_name}")

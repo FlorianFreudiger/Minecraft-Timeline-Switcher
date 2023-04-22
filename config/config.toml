@@ -84,6 +84,12 @@ pack = "1.18.2"
 pack = "1.19.4"
 
 
+# Automatically copy pack into a target directory, for example into your webserver
+[packwiz]
+enable = true
+output_path = "packwiz_out"
+
+
 # Automatically update a stack on your portainer instance
 # Requires setting API key in secrets.toml (copy the secrets.toml.example file)
 [portainer]
