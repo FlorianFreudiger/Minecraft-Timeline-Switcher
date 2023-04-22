@@ -14,7 +14,7 @@ start_time = "04:00"
 # List of variants, in the order they should be progressed through
 # Attributes will be inherited from the previous variants, meaning only the attributes that change need to be specified
 
-# name = Timeline directory name for packwiz files, does not need to be a version number
+# name = Directory name inside packwiz directory, does not need to be a version number
 # server_image = Docker image to use for the server
 # server_type = Server type, default: "VANILLA"
 # server_version = Minecraft version for just the server, default: "packwiz" - version from packwiz pack.toml

@@ -16,9 +16,9 @@ class Variant:
 
     def __init__(self, pack: str, server_image: str, server_type: str, server_version: str) -> None:
         self.pack = pack
-        pack_path = os.path.join("timeline", pack)
+        pack_path = os.path.join("../config/packwiz", pack)
         if not os.path.isdir(pack_path):
-            raise FileNotFoundError(f"Pack {pack} not found in timeline directory.")
+            raise FileNotFoundError(f"Pack {pack} not found in packwiz directory.")
 
         self.server_image = server_image
         self.server_type = server_type
@@ -31,7 +31,7 @@ class Variant:
             self.server_version = server_version
 
     def generate_compose(self) -> str:
-        with open("docker-compose-template.yml", "r") as template:
+        with open("../config/docker-compose-template.yml", "r") as template:
             compose = template.read()
             return compose.format(server_image=self.server_image,
                                   server_type=self.server_type,
@@ -83,7 +83,7 @@ def load_toml(file: str) -> dict[str, Any]:
 
 
 def main() -> None:
-    config_dict = load_toml("config.toml")
+    config_dict = load_toml("../config/config.toml")
     logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s: %(message)s', level=config_dict["verbosity"])
 
     config = Config.from_config(config_dict)
@@ -91,13 +91,13 @@ def main() -> None:
     compose = config.timeline[0].generate_compose()
 
     if config_dict["portainer"]["enable"]:
-        secrets_dict = load_toml("secrets.toml")
+        secrets_dict = load_toml("../config/secrets.toml")
         portainer = Portainer.from_config(config_dict, secrets_dict)
         portainer.update_stack(compose)
 
     logging.debug("Loading configs complete.")
 
-    if not os.path.isfile("docker-compose-template.yml"):
+    if not os.path.isfile("../config/docker-compose-template.yml"):
         raise FileNotFoundError("docker-compose-template.yml missing.")
 
     print(compose)
