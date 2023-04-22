@@ -20,4 +20,4 @@ class PackwizSyncer(UpdateTarget):
 
     def update_variant(self, variant: Variant) -> None:
         pack_path = os.path.join("../config/packwiz", variant.pack)
-        shutil.copytree(pack_path, self.output_path)
+        shutil.copytree(pack_path, self.output_path, dirs_exist_ok=True)

@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import tomllib
 from abc import ABC, abstractmethod
+from typing import Any
 
 
 class UpdateTarget(ABC):
@@ -39,3 +40,29 @@ class Variant:
             return compose.format(server_image=self.server_image,
                                   server_type=self.server_type,
                                   server_version=self.server_version)
+
+    @staticmethod
+    def list_from_config(config: dict[str, Any]) -> list[Variant]:
+        variants = []
+
+        pack = None
+        server_image = None
+        server_type = "VANILLA"
+        server_version = "packwiz"
+
+        for variant in config["variant"]:
+            if "pack" in variant:
+                pack = variant["pack"]
+            if "server_image" in variant:
+                server_image = variant["server_image"]
+            if "server_type" in variant:
+                server_type = variant["server_type"]
+            if "server_version" in variant:
+                server_version = variant["server_version"]
+
+            if pack is None or server_image is None or server_type is None or server_version is None:
+                raise ValueError("Missing variant information."
+                                 "Make sure the first variant has at least a pack and server_image.")
+            variants.append(Variant(pack, server_image, server_type, server_version))
+
+        return variants
