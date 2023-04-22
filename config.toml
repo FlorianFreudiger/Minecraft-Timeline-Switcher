@@ -1,3 +1,6 @@
+# Set minimum logging level to display, acceptable values: DEBUG, INFO, WARNING, ERROR, CRITICAL
+verbosity = "INFO"
+
 # Automatic Minecraft update section
 [updates]
 

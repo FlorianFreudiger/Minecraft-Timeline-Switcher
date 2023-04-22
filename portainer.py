@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import requests
+import logging
 from typing import Any
 
 
@@ -28,22 +29,17 @@ class Portainer:
     def get_request(self, endpoint: str):
         url = f"https://{self.hostname}/api/{endpoint}"
         response = requests.get(url, headers=self.headers)
-        if response.status_code != 200:
-            print(f"Error getting {endpoint}: {response.status_code} {response.text}")
-            exit(1)
-        else:
-            return response.json()
+        response.raise_for_status()
+        return response.json()
 
     def put_request(self, endpoint: str, body: dict, params: dict = None):
         url = f"https://{self.hostname}/api/{endpoint}"
         response = requests.put(url, headers=self.headers, json=body, params=params)
-        if response.status_code != 200:
-            print(f"Error putting {endpoint}: {response.status_code} {response.text}")
-            exit(1)
-        else:
-            return response.json()
+        response.raise_for_status()
+        return response.json()
 
     def update_stack(self, compose: str) -> None:
+        logging.info(f"Updating Portainer stack {self.stack_name}")
         # Get stack id
         stacks = self.get_request("stacks")
 
@@ -58,8 +54,7 @@ class Portainer:
                 break
 
         if stack_id is None:
-            print(f"Stack {self.stack_name} not found.")
-            exit(1)
+            raise RuntimeError(f"Stack {self.stack_name} not found.")
 
         # Update stack
         update_body = {

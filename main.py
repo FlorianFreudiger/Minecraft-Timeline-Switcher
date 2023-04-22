@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import tomllib
+import logging
 from typing import Any
 
 from portainer import Portainer
@@ -17,8 +18,7 @@ class Variant:
         self.pack = pack
         pack_path = os.path.join("timeline", pack)
         if not os.path.isdir(pack_path):
-            print(f"Pack {pack} not found in timeline directory.")
-            exit(1)
+            raise FileNotFoundError(f"Pack {pack} not found in timeline directory.")
 
         self.server_image = server_image
         self.server_type = server_type
@@ -70,8 +70,8 @@ class Config:
                 server_version = variant["server_version"]
 
             if pack is None or server_image is None or server_type is None or server_version is None:
-                print("Missing variant information. Make sure the first variant has at least a pack and server_image.")
-                exit(1)
+                raise ValueError("Missing variant information."
+                                 "Make sure the first variant has at least a pack and server_image.")
             timeline.append(Variant(pack, server_image, server_type, server_version))
 
         return Config(interval, start_time, timeline)
@@ -84,6 +84,8 @@ def load_toml(file: str) -> dict[str, Any]:
 
 def main() -> None:
     config_dict = load_toml("config.toml")
+    logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s: %(message)s', level=config_dict["verbosity"])
+
     config = Config.from_config(config_dict)
 
     compose = config.timeline[0].generate_compose()
@@ -93,9 +95,10 @@ def main() -> None:
         portainer = Portainer.from_config(config_dict, secrets_dict)
         portainer.update_stack(compose)
 
+    logging.debug("Loading configs complete.")
+
     if not os.path.isfile("docker-compose-template.yml"):
-        print("docker-compose-template.yml missing.")
-        exit(1)
+        raise FileNotFoundError("docker-compose-template.yml missing.")
 
     print(compose)
 
