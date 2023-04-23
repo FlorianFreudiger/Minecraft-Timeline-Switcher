@@ -11,6 +11,18 @@ interval = 1440
 # Starting time of day, in 24 hour format OR "now" to immediately start
 start_time = "04:00"
 
+
+# Save timeline progress in order to continue without starting from the beginning
+[updates.save]
+enable = true
+path = "save.txt"
+# Should the first update be the same as where it stopped or should it skip the last update?
+# true, false or "auto" (true if start_time is "now")
+repeat_after_load = "auto"
+# Should the save file remain after the last update, blocking future restarts?
+keep = true
+
+
 # List of variants, in the order they should be progressed through
 # Attributes will be inherited from the previous variants, meaning only the attributes that change need to be specified
 

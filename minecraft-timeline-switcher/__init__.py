@@ -3,16 +3,19 @@ from __future__ import annotations
 import logging
 import time
 import tomllib
-import schedule
 from typing import Any
+
+import schedule
 from packaging import version
 
+from save import UpdaterSaver
 from models import Variant, UpdateTarget
 from packwiz import PackwizSyncer
 from portainer import Portainer
 
 
 class Updater:
+    saver: UpdaterSaver
     timeline: list[Variant]
     interval: int
     start_time: str
@@ -47,14 +50,19 @@ class Updater:
             # Add portainer last to ensure packwiz output is already in place if used in compose template
             update_targets.append(Portainer.from_config(config, secrets))
 
-        return Updater(interval, start_time, timeline, update_targets)
+        saver = UpdaterSaver.from_config(config)
 
-    def __init__(self, interval: int, start_time: str, timeline: list[Variant], targets: list[UpdateTarget]) -> None:
+        return Updater(interval, start_time, timeline, update_targets, saver)
+
+    def __init__(self, interval: int, start_time: str, timeline: list[Variant], targets: list[UpdateTarget],
+                 saver: UpdaterSaver) -> None:
         self.interval = interval
         self.start_time = start_time
         self.timeline = timeline
         self.targets = targets
-        self.next_variant_index = 0
+
+        self.saver = saver
+        self.next_variant_index = saver.load_progress()
 
     def update(self, variant: Variant) -> None:
         for target in self.targets:
@@ -63,16 +71,22 @@ class Updater:
     def next_variant(self) -> Variant:
         return self.timeline[self.next_variant_index]
 
+    def is_finished(self) -> bool:
+        return self.next_variant_index >= len(self.timeline)
+
+    def finish(self) -> None:
+        self.saver.delete_progress()
+
     def first_job(self):
         logging.debug("Start time reached, scheduling future updates every %s minutes", self.interval)
-        schedule.every(self.interval).minutes.do(self.update_job)
+        scheduled_updates = schedule.every(self.interval).minutes.do(self.update_job)
 
         # Run first update after scheduling to not influence update times
         logging.debug("Running first update")
         first_update_job_result = self.update_job()
         if first_update_job_result is schedule.CancelJob:
             logging.debug("First update already finished the timeline, cancelling future jobs.")
-            schedule.clear()
+            schedule.cancel_job(scheduled_updates)
 
         return schedule.CancelJob
 
@@ -81,9 +95,12 @@ class Updater:
         logging.info("Updating to %s", variant)
         self.update(variant)
 
+        self.saver.save_progress(self.next_variant_index)
+
         self.next_variant_index += 1
-        if self.next_variant_index >= len(self.timeline):
+        if self.is_finished():
             logging.info("Last update finished")
+            self.finish()
 
             return schedule.CancelJob
 
@@ -91,6 +108,11 @@ class Updater:
         logging.info("Next update in %s minutes: %s", self.interval, next_variant)
 
     def initialize_schedule(self) -> None:
+        if self.is_finished():
+            logging.info("Last update already finished, exiting")
+            self.finish()
+            return
+
         if self.start_time.lower() == "now":
             logging.info("Scheduling start now, afterwards every %s minutes", self.interval)
             self.first_job()

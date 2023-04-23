@@ -162,3 +162,6 @@ secrets.toml
 
 # Copied pack
 packwiz_out/
+
+# Save file
+save.txt
