@@ -27,12 +27,15 @@ class Variant:
         self.server_image = server_image
         self.server_type = server_type
 
-        if server_version == "packwiz":
+        if server_version.lower() == "packwiz":
             with open(os.path.join(pack_path, "pack.toml"), "rb") as pack_toml_file:
                 pack_toml = tomllib.load(pack_toml_file)
                 self.server_version = pack_toml["versions"]["minecraft"]
         else:
             self.server_version = server_version
+
+    def __str__(self) -> str:
+        return f"Variant: Pack \"{self.pack}\", Server using {self.server_type} {self.server_version}"
 
     def generate_compose(self) -> str:
         with open("../config/docker-compose-template.yml", "r") as template:

@@ -8,7 +8,7 @@ verbosity = "INFO"
 # 1440 min = 24 hours
 interval = 1440
 
-# Starting time of day, in 24 hour format
+# Starting time of day, in 24 hour format OR "now" to immediately start
 start_time = "04:00"
 
 # List of variants, in the order they should be progressed through

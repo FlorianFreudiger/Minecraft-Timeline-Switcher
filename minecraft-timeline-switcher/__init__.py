@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
+import time
 import tomllib
+import schedule
 from typing import Any
 
 from models import Variant, UpdateTarget
@@ -14,6 +16,8 @@ class Updater:
     interval: int
     start_time: str
     targets: list[UpdateTarget]
+
+    next_variant: int
 
     @staticmethod
     def from_config(config: dict[str, Any], secrets: dict[str, Any]) -> Updater:
@@ -35,10 +39,44 @@ class Updater:
         self.start_time = start_time
         self.timeline = timeline
         self.targets = targets
+        self.next_variant = 0
 
     def update(self, variant: Variant) -> None:
         for target in self.targets:
             target.update_variant(variant)
+
+    def first_job(self):
+        logging.debug("Start time reached, scheduling future updates every %s minutes", self.interval)
+        schedule.every(self.interval).minutes.do(self.update_job)
+
+        # Run first update after scheduling to not influence update times
+        logging.debug("Running first update")
+        first_update_job_result = self.update_job()
+        if first_update_job_result is schedule.CancelJob:
+            logging.debug("First update already finished the timeline, cancelling future jobs.")
+            schedule.clear()
+
+        return schedule.CancelJob
+
+    def update_job(self):
+        variant = self.timeline[self.next_variant]
+        logging.info("Updating to %s", variant)
+        self.update(variant)
+
+        self.next_variant += 1
+        if self.next_variant >= len(self.timeline):
+            logging.info("Last update finished")
+
+            return schedule.CancelJob
+
+    def initialize_schedule(self) -> None:
+        if self.start_time.lower() == "now":
+            logging.info("Scheduling start now, afterwards every %s minutes", self.interval)
+            self.first_job()
+            return
+
+        logging.info("Scheduling start at %s, afterwards every %s minutes", self.start_time, self.interval)
+        schedule.every().day.at(self.start_time).do(self.first_job)
 
 
 def load_toml(file: str) -> dict[str, Any]:
@@ -54,7 +92,16 @@ def main() -> None:
     updater = Updater.from_config(config, secrets)
 
     logging.debug("Loading configs complete.")
-    updater.update(updater.timeline[0])
+
+    updater.initialize_schedule()
+
+    if schedule.jobs:
+        logging.debug("Waiting for first job")
+        schedule.run_pending()
+    while schedule.jobs:
+        time.sleep(10)
+        schedule.run_pending()
+    logging.debug("Timeline finished, exiting")
 
 
 if __name__ == "__main__":
