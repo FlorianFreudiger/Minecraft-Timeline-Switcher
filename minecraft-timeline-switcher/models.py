@@ -17,8 +17,10 @@ class Variant:
     server_image: str
     server_type: str
     server_version: str
+    server_additional_envs: dict[str, str]
 
-    def __init__(self, pack: str, server_image: str, server_type: str, server_version: str) -> None:
+    def __init__(self, pack: str,
+                 server_image: str, server_type: str, server_version: str, server_additional_envs: dict) -> None:
         self.pack = pack
         pack_path = os.path.join("../config/packwiz", pack)
         if not os.path.isdir(pack_path):
@@ -34,15 +36,23 @@ class Variant:
         else:
             self.server_version = server_version
 
+        self.server_additional_envs = server_additional_envs
+
     def __str__(self) -> str:
         return f"Variant: Pack \"{self.pack}\", Server using {self.server_type} {self.server_version}"
 
     def generate_compose(self) -> str:
         with open("../config/docker-compose-template.yml", "r") as template:
             compose = template.read()
+
+            additional_envs = ""
+            for key, value in self.server_additional_envs.items():
+                additional_envs += f"\n            - {key}={value}"
+
             return compose.format(server_image=self.server_image,
                                   server_type=self.server_type,
-                                  server_version=self.server_version)
+                                  server_version=self.server_version,
+                                  server_additional_envs=additional_envs)
 
     @staticmethod
     def list_from_config(config: dict[str, Any]) -> list[Variant]:
@@ -52,6 +62,7 @@ class Variant:
         server_image = None
         server_type = "VANILLA"
         server_version = "packwiz"
+        server_additional_envs = {}
 
         for variant in config["variant"]:
             if "pack" in variant:
@@ -62,10 +73,12 @@ class Variant:
                 server_type = variant["server_type"]
             if "server_version" in variant:
                 server_version = variant["server_version"]
+            if "server_additional_envs" in variant:
+                server_additional_envs = variant["server_additional_envs"]
 
             if pack is None or server_image is None or server_type is None or server_version is None:
                 raise ValueError("Missing variant information."
                                  "Make sure the first variant has at least a pack and server_image.")
-            variants.append(Variant(pack, server_image, server_type, server_version))
+            variants.append(Variant(pack, server_image, server_type, server_version, server_additional_envs))
 
         return variants

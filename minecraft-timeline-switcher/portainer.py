@@ -41,10 +41,9 @@ class Portainer(UpdateTarget):
         return response.json()
 
     def update_variant(self, variant: Variant) -> None:
-        self.update_stack(variant.generate_compose())
-
-    def update_stack(self, compose: str) -> None:
+        compose = variant.generate_compose()
         logging.info(f"Updating Portainer stack {self.stack_name}")
+
         # Get stack id
         stacks = self.get_request("stacks")
 

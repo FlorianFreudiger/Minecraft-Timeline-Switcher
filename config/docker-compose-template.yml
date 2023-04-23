@@ -29,6 +29,10 @@ services:
             - MEMORY=4G
             - USE_AIKAR_FLAGS=TRUE
 
+            # Additional environment variables provided in portainer, for the server_additional_envs config item
+            # Please do not change the indentation, as it will break the formatting of the inserted variables
+            {server_additional_envs}
+
         ports:
             - '25565:25565'
 
