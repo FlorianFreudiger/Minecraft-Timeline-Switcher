@@ -34,12 +34,16 @@ class Updater:
         for index, variant in enumerate(timeline):
             logging.info("Parsed variant %02d: %s", index, variant)
 
-            server_version = version.parse(variant.server_version)
-            if last_server_version is not None and server_version < last_server_version:
-                logging.warning("Variant %02d seems to have a lower server version than the previous variant "
-                                "(%s -> %s). Be careful, your world may not load correctly!",
-                                index, last_server_version, server_version)
-            last_server_version = server_version
+            try:
+                server_version = version.parse(variant.server_version)
+                if last_server_version is not None and server_version < last_server_version:
+                    logging.warning("Variant %02d seems to have a lower server version than the previous variant "
+                                    "(%s -> %s). Be careful, your world may not load correctly!",
+                                    index, last_server_version, server_version)
+                last_server_version = server_version
+            except version.InvalidVersion:
+                logging.warning("Cannot verify that variant %02d is not a downgrade, "
+                                "because of unsupported version format: %s", index, variant.server_version)
 
             variant.index = index
 
