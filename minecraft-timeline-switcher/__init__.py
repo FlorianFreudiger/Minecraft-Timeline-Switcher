@@ -5,6 +5,7 @@ import time
 import tomllib
 import schedule
 from typing import Any
+from packaging import version
 
 from models import Variant, UpdateTarget
 from packwiz import PackwizSyncer
@@ -17,13 +18,27 @@ class Updater:
     start_time: str
     targets: list[UpdateTarget]
 
-    next_variant: int
+    next_variant_index: int
 
     @staticmethod
     def from_config(config: dict[str, Any], secrets: dict[str, Any]) -> Updater:
         interval = config["updates"]["interval"]
         start_time = config["updates"]["start_time"]
         timeline = Variant.list_from_config(config)
+
+        # Enumerate for loop
+        last_server_version = None
+        for index, variant in enumerate(timeline):
+            logging.info("Parsed variant %02d: %s", index, variant)
+
+            server_version = version.parse(variant.server_version)
+            if last_server_version is not None and server_version < last_server_version:
+                logging.warning("Variant %02d seems to have a lower server version than the previous variant "
+                                "(%s -> %s). Be careful, your world may not load correctly!",
+                                index, last_server_version, server_version)
+            last_server_version = server_version
+
+            variant.index = index
 
         update_targets = []
         if config["packwiz"]["enable"]:
@@ -39,11 +54,14 @@ class Updater:
         self.start_time = start_time
         self.timeline = timeline
         self.targets = targets
-        self.next_variant = 0
+        self.next_variant_index = 0
 
     def update(self, variant: Variant) -> None:
         for target in self.targets:
             target.update_variant(variant)
+
+    def next_variant(self) -> Variant:
+        return self.timeline[self.next_variant_index]
 
     def first_job(self):
         logging.debug("Start time reached, scheduling future updates every %s minutes", self.interval)
@@ -59,15 +77,18 @@ class Updater:
         return schedule.CancelJob
 
     def update_job(self):
-        variant = self.timeline[self.next_variant]
+        variant = self.next_variant()
         logging.info("Updating to %s", variant)
         self.update(variant)
 
-        self.next_variant += 1
-        if self.next_variant >= len(self.timeline):
+        self.next_variant_index += 1
+        if self.next_variant_index >= len(self.timeline):
             logging.info("Last update finished")
 
             return schedule.CancelJob
+
+        next_variant = self.next_variant()
+        logging.info("Next update in %s minutes: %s", self.interval, next_variant)
 
     def initialize_schedule(self) -> None:
         if self.start_time.lower() == "now":
