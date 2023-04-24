@@ -13,13 +13,13 @@ class UpdaterSaver:
 
     @staticmethod
     def from_config(config: dict[str, Any]) -> UpdaterSaver:
-        enable = config["updates"]["save"]["enable"]
-        path = os.path.join("..", config["updates"]["save"]["path"])
-        keep = config["updates"]["save"]["keep"]
+        enable = config["updater"]["save"]["enable"]
+        path = os.path.join("..", config["updater"]["save"]["path"])
+        keep = config["updater"]["save"]["keep"]
 
-        repeat_after_load = config["updates"]["save"]["repeat_after_load"]
+        repeat_after_load = config["updater"]["save"]["repeat_after_load"]
         if type(repeat_after_load) is str and repeat_after_load.lower() == "auto":
-            repeat_after_load = config["updates"]["start_time"].lower() == "now"
+            repeat_after_load = config["updater"]["start_time"].lower() == "now"
         elif type(repeat_after_load) is not bool:
             raise ValueError("repeat_after_load must be a boolean or the string \"auto\"")
 

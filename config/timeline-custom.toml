@@ -1,0 +1,17 @@
+# Custom timeline - add your own variants here or modify existing ones.
+
+# List of variants, in the order they should be progressed through
+# Attributes will be inherited from the previous variants, meaning only the attributes that change need to be specified
+
+# pack = Directory name inside packwiz directory, does not need to be a version number
+# server_image = Docker image to use for the server
+# server_type = Server type, default: "VANILLA"
+# server_version = Minecraft version for just the server, default: "packwiz" - version from packwiz pack.toml
+# server_additional_envs = Additional environment variables per variant
+
+#[[variants]]
+#pack = # e.g. "1.16.5"
+#server_image = # e.g. "itzg/minecraft-server:java8-multiarch" or "itzg/minecraft-server:latest" (1.17+)
+#server_type = # e.g. "VANILLA", for other types see "Server Types" in https://itzg.github.io/docker-minecraft-docs/
+#server_version = "packwiz" # Some server types may require a specific build name like X.X-RX.X-SNAPSHOT-latest
+#server_additional_envs = {} # Add environment vars if needed, if it's for all variants add to compose template instead

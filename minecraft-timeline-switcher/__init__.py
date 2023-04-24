@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import logging
 import time
 import tomllib
@@ -16,7 +17,7 @@ from portainer import Portainer
 
 class Updater:
     saver: UpdaterSaver
-    timeline: list[Variant]
+    variants: list[Variant]
     interval: int
     start_time: str
     targets: list[UpdateTarget]
@@ -25,13 +26,26 @@ class Updater:
 
     @staticmethod
     def from_config(config: dict[str, Any], secrets: dict[str, Any]) -> Updater:
-        interval = config["updates"]["interval"]
-        start_time = config["updates"]["start_time"]
-        timeline = Variant.list_from_config(config)
+        interval = config["updater"]["interval"]
+        start_time = config["updater"]["start_time"]
+
+        variants = []
+        timeline_names = config["updater"]["timelines"]
+        for timeline_name in timeline_names:
+            path = os.path.join("../config", timeline_name + ".toml")
+            timeline_config = load_toml(path)
+
+            if "variants" not in timeline_config:
+                logging.info("Found no variants in timeline \"%s\", skipping", timeline_name)
+                continue
+
+            timeline_variants = Variant.list_from_config(timeline_config)
+            variants += timeline_variants
+            logging.info("Found %d variants in timeline \"%s\"", len(timeline_variants), timeline_name)
 
         # Enumerate for loop
         last_server_version = None
-        for index, variant in enumerate(timeline):
+        for index, variant in enumerate(variants):
             logging.info("Parsed variant %02d: %s", index, variant)
 
             try:
@@ -43,7 +57,7 @@ class Updater:
                 last_server_version = server_version
             except version.InvalidVersion:
                 logging.warning("Cannot verify that variant %02d is not a downgrade, "
-                                "because of unsupported version format: %s", index, variant.server_version)
+                                "due to unsupported version format: \"%s\"", index, variant.server_version)
 
             variant.index = index
 
@@ -56,13 +70,13 @@ class Updater:
 
         saver = UpdaterSaver.from_config(config)
 
-        return Updater(interval, start_time, timeline, update_targets, saver)
+        return Updater(interval, start_time, variants, update_targets, saver)
 
-    def __init__(self, interval: int, start_time: str, timeline: list[Variant], targets: list[UpdateTarget],
+    def __init__(self, interval: int, start_time: str, variants: list[Variant], targets: list[UpdateTarget],
                  saver: UpdaterSaver) -> None:
         self.interval = interval
         self.start_time = start_time
-        self.timeline = timeline
+        self.variants = variants
         self.targets = targets
 
         self.saver = saver
@@ -73,10 +87,10 @@ class Updater:
             target.update_variant(variant)
 
     def next_variant(self) -> Variant:
-        return self.timeline[self.next_variant_index]
+        return self.variants[self.next_variant_index]
 
     def is_finished(self) -> bool:
-        return self.next_variant_index >= len(self.timeline)
+        return self.next_variant_index >= len(self.variants)
 
     def finish(self) -> None:
         self.saver.delete_progress()

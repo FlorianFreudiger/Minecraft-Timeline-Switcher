@@ -64,7 +64,7 @@ class Variant:
         server_version = "packwiz"
         server_additional_envs = {}
 
-        for variant in config["variant"]:
+        for variant in config["variants"]:
             if "pack" in variant:
                 pack = variant["pack"]
             if "server_image" in variant:
