@@ -54,7 +54,21 @@ exploit minecraft versions 1.7 to inclusive 1.18.0 are impacted, please see the
 [official Minecraft article](https://www.minecraft.net/en-us/article/important-message--security-vulnerability-java-edition)
 about it.
 
-The default server image [itzg/docker-minecraft-server](https://github.com/itzg/docker-minecraft-server)
-and the official Minecraft Launcher, MultiMC, Prism Launcher and other "big launchers"
+The official Minecraft Launcher, MultiMC, Prism Launcher and other "big launchers"
 should all have mitigations against Log4Shell in place by now.
-But if you are for example using a different or very old docker image for your server please verify that it is patched.
+
+The default server image [itzg/docker-minecraft-server](https://github.com/itzg/docker-minecraft-server)
+already had certain patches in place for vanilla and [Purpur](https://purpurmc.org/) servers. 
+Additionally, some server types like Bukkit and Paper have patched the last minor version of every major release
+starting from 1.8, so for example 1.17.1 has been patched but 1.17(.0) was not.
+
+This meant that some odd versions like Paper 1.16.4, 1.17(.0), but also Bukkit 1.7.10 were still vulnerable!
+
+Since **2023-05-28** the [CreeperHost/Log4jPatcher](https://github.com/CreeperHost/Log4jPatcher) is being used in
+[itzg/docker-minecraft-server](https://github.com/itzg/docker-minecraft-server)
+which should patch all affected versions, including the ones stated above.
+See the [issue](https://github.com/itzg/docker-minecraft-server/issues/2101) and
+[pull request](https://github.com/itzg/docker-minecraft-server/pull/2148) for more information.
+Please pull or build the latest docker image if your image is older than that!
+
+If you are using an entirely different server image please verify that it is patched, especially check Bukkit 1.7.10!
