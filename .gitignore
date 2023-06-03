@@ -157,7 +157,8 @@ cython_debug/
 .vscode/
 .idea/
 
-# Secrets
+# Config containing secrets
+config.toml
 secrets.toml
 
 # Copied pack

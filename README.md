@@ -16,10 +16,8 @@ recommend checking out.
 
 ## Setup
 
-To set it up please see the options inside the config files.
-The `secrets.toml.example` file must be copied/renamed to `secrets.toml`.
-The server will be deployed using the `docker-compose-template.yml` file, change it to your liking, do not rename it.
-You will also need to accept the minecraft EULA there in order to start the server.
+To set it up please see the options inside the config file.
+The `config.toml.example` file must be copied/renamed to `config.toml`.
 
 ### Clients
 
@@ -42,6 +40,9 @@ In order to automatically switch the server you will need a [Portainer](https://
 - Existing stack to overwrite
 - Portainer API key (preferably of a new user)
 
+The server will be deployed using the `docker-compose-template.yml` file, change it to your liking, do not rename it.
+You will also need to accept the minecraft EULA there in order to start the server.
+
 Using docker-compose to instead deploy the server on the same host might happen in the future.
 
 ## Security
@@ -58,7 +59,7 @@ The official Minecraft Launcher, MultiMC, Prism Launcher and other "big launcher
 should all have mitigations against Log4Shell in place by now.
 
 The default server image [itzg/docker-minecraft-server](https://github.com/itzg/docker-minecraft-server)
-already had certain patches in place for vanilla and [Purpur](https://purpurmc.org/) servers. 
+already had certain patches in place for vanilla and [Purpur](https://purpurmc.org/) servers.
 Additionally, some server types like Bukkit and Paper have patched the last minor version of every major release
 starting from 1.8, so for example 1.17.1 has been patched but 1.17(.0) was not.
 

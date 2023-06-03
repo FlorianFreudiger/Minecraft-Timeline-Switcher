@@ -13,12 +13,12 @@ class Portainer(UpdateTarget):
     headers: dict[str, str]
 
     @staticmethod
-    def from_config(config: dict[str, Any], secrets: dict[str, Any]) -> Portainer:
+    def from_config(config: dict[str, Any]) -> Portainer:
         host = config["portainer"]["hostname"]
         stack = config["portainer"]["stack_name"]
 
         headers = {}
-        for header in secrets["portainer"]["header"]:
+        for header in config["portainer"]["header"]:
             headers[header["name"]] = header["value"]
 
         return Portainer(host, stack, headers)

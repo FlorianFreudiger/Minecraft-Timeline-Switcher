@@ -35,8 +35,21 @@ output_path = "packwiz_out"
 
 
 # Automatically update a stack on your portainer instance
-# Requires setting API key in secrets.toml (copy the secrets.toml.example file)
+# Requires setting API key in header below
 [portainer]
 enable = false
 hostname = "your-portainer-host.com" # omit "https://", it will be included automatically (your server must use https)
 stack_name = "minecraft-timeline-server" # Name of EXISTING stack, create a dummy stack first
+
+[[portainer.header]]
+name = "X-API-Key"
+value = "your-portainer-api-key"
+
+# You can also add other headers here, for example to pass Cloudflare Access if you use it
+#[[portainer.header]]
+#name = "CF-Access-Client-Id"
+#value = ""
+
+#[[portainer.header]]
+#name = "CF-Access-Client-Secret"
+#value = ""

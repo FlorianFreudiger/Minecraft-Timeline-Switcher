@@ -25,7 +25,7 @@ class Updater:
     next_variant_index: int
 
     @staticmethod
-    def from_config(config: dict[str, Any], secrets: dict[str, Any]) -> Updater:
+    def from_config(config: dict[str, Any]) -> Updater:
         interval = config["updater"]["interval"]
         start_time = config["updater"]["start_time"]
 
@@ -66,7 +66,7 @@ class Updater:
             update_targets.append(PackwizSyncer.from_config(config))
         if config["portainer"]["enable"]:
             # Add portainer last to ensure packwiz output is already in place if used in compose template
-            update_targets.append(Portainer.from_config(config, secrets))
+            update_targets.append(Portainer.from_config(config))
 
         saver = UpdaterSaver.from_config(config)
 
@@ -149,10 +149,9 @@ def main() -> None:
     config = load_toml("../config/config.toml")
     logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s: %(message)s', level=config["verbosity"])
 
-    secrets = load_toml("../config/secrets.toml")
-    updater = Updater.from_config(config, secrets)
+    updater = Updater.from_config(config)
 
-    logging.debug("Loading configs complete.")
+    logging.debug("Loading config complete.")
 
     updater.initialize_schedule()
 
