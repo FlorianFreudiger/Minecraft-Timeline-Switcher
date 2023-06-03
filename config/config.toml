@@ -5,7 +5,7 @@ verbosity = "INFO"
 [updater]
 
 # Timeline config files to parse and switch between variants from, in the order of array elements
-timelines = ["timeline-release", "timeline-custom"]
+timelines = ["timeline-release-bukkit-paper", "timeline-custom"]
 
 # Run every x minutes, ensure this is enough time to stop, download, start the server and finish world conversion
 # 1440 min = 24 hours
