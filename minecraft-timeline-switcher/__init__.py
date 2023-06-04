@@ -1,9 +1,6 @@
 from __future__ import annotations
 
 import logging
-import time
-
-import schedule
 
 from update import Updater
 from utility import load_toml
@@ -14,18 +11,10 @@ def main() -> None:
     logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s: %(message)s', level=config["verbosity"])
 
     updater = Updater.from_config(config)
-
     logging.debug("Loading config complete.")
 
-    updater.initialize_schedule()
-
-    if schedule.jobs:
-        logging.debug("Waiting for first job")
-        schedule.run_pending()
-    while schedule.jobs:
-        time.sleep(10)
-        schedule.run_pending()
-    logging.debug("Timeline finished, exiting")
+    updater.run(10)
+    logging.info("Timeline finished, exiting")
 
 
 if __name__ == "__main__":

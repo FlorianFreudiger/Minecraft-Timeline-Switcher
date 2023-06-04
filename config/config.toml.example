@@ -11,7 +11,7 @@ timelines = ["timeline-release-bukkit-paper", "timeline-custom"]
 # 1440 min = 24 hours
 interval = 1440
 
-# Starting time of day, in 24 hour format OR "now" to immediately start
+# Starting time of day, in 24 hour format (HH:MM) OR "now" to immediately start
 start_time = "04:00"
 
 

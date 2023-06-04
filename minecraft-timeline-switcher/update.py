@@ -2,16 +2,43 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any
+import queue
+import threading
+import time
+from typing import Any, Type
 
 import schedule
 from packaging import version
+from schedule import CancelJob
 
 from models import Variant, UpdateTarget
 from packwiz import PackwizSyncer
 from portainer import Portainer
 from save import UpdaterSaver
 from utility import load_toml
+
+
+class UpdateQueue:
+    queue: queue.Queue
+    thread: threading.Thread
+
+    def __init__(self) -> None:
+        self.queue = queue.Queue()
+        # Daemon thread to not block program exit when KeyboardInterrupt is raised
+        self.thread = threading.Thread(target=self.worker, daemon=True)
+        self.thread.start()
+
+    def worker(self) -> None:
+        while True:
+            job = self.queue.get()
+            job()
+            self.queue.task_done()
+
+    def wait_for_finish(self) -> None:
+        self.queue.join()
+
+    def put(self, job) -> None:
+        self.queue.put(job)
 
 
 class Updater:
@@ -22,6 +49,9 @@ class Updater:
     targets: list[UpdateTarget]
 
     next_variant_index: int
+
+    scheduler: schedule.Scheduler
+    update_queue: UpdateQueue
 
     @staticmethod
     def from_config(config: dict[str, Any]) -> Updater:
@@ -81,9 +111,8 @@ class Updater:
         self.saver = saver
         self.next_variant_index = saver.load_progress()
 
-    def update(self, variant: Variant) -> None:
-        for target in self.targets:
-            target.update_variant(variant)
+        self.scheduler = schedule.Scheduler()
+        self.update_queue = UpdateQueue()
 
     def next_variant(self) -> Variant:
         return self.variants[self.next_variant_index]
@@ -92,25 +121,26 @@ class Updater:
         return self.next_variant_index >= len(self.variants)
 
     def finish(self) -> None:
+        self.scheduler.clear()
+        self.update_queue.wait_for_finish()
         self.saver.delete_progress()
 
-    def first_job(self):
-        logging.debug("Start time reached, scheduling future updates every %s minutes", self.interval)
-        scheduled_updates = schedule.every(self.interval).minutes.do(self.update_job)
-
+    def first_job(self) -> Type[CancelJob]:
         # Run first update after scheduling to not influence update times
         logging.debug("Running first update")
-        first_update_job_result = self.update_job()
-        if first_update_job_result is schedule.CancelJob:
-            logging.debug("First update already finished the timeline, cancelling future jobs.")
-            schedule.cancel_job(scheduled_updates)
+        self.update_queue.put(self.update_job)
+
+        logging.debug("Scheduling future updates every %s minutes", self.interval)
+        self.scheduler.every(self.interval).minutes.do(self.update_queue.put, self.update_job)
 
         return schedule.CancelJob
 
-    def update_job(self):
+    def update_job(self) -> None:
         variant = self.next_variant()
         logging.info("Updating to %s", variant)
-        self.update(variant)
+
+        for target in self.targets:
+            target.update_variant(variant)
 
         self.saver.save_progress(self.next_variant_index)
 
@@ -119,10 +149,10 @@ class Updater:
             logging.info("Last update finished")
             self.finish()
 
-            return schedule.CancelJob
+        next_update = self.scheduler.next_run
+        assert next_update is not None
 
-        next_variant = self.next_variant()
-        logging.info("Next update in %s minutes: %s", self.interval, next_variant)
+        logging.info("Next update at %s to %s", next_update.strftime("%Y-%m-%d %H:%M:%S"), self.next_variant())
 
     def initialize_schedule(self) -> None:
         if self.is_finished():
@@ -136,4 +166,14 @@ class Updater:
             return
 
         logging.info("Scheduling start at %s, afterwards every %s minutes", self.start_time, self.interval)
-        schedule.every().day.at(self.start_time).do(self.first_job)
+        self.scheduler.every().day.at(self.start_time).do(self.first_job)
+
+    def run(self, scheduler_interval: int) -> None:
+        self.initialize_schedule()
+
+        if self.scheduler.jobs:
+            logging.debug("Waiting for first job")
+            self.scheduler.run_pending()
+        while self.scheduler.jobs:
+            time.sleep(scheduler_interval)
+            self.scheduler.run_pending()
