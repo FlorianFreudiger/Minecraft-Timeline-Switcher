@@ -5,6 +5,8 @@ import tomllib
 from abc import ABC, abstractmethod
 from typing import Any
 
+from packaging import version
+
 
 class UpdateTarget(ABC):
     @abstractmethod
@@ -40,6 +42,15 @@ class Variant:
 
     def __str__(self) -> str:
         return f"Variant: Pack \"{self.pack}\", Server using {self.server_type} {self.server_version}"
+
+    def parse_server_version(self) -> version.Version:
+        version_string = self.server_version.strip()
+
+        # Handle bukkit version strings
+        if self.server_type.strip().casefold() == "bukkit":
+            version_string = version_string.split("-", maxsplit=1)[0]
+
+        return version.parse(version_string)
 
     def generate_compose(self) -> str:
         with open("../config/docker-compose-template.yml", "r") as template:

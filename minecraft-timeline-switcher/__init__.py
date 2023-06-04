@@ -49,7 +49,7 @@ class Updater:
             logging.info("Parsed variant %02d: %s", index, variant)
 
             try:
-                server_version = version.parse(variant.server_version)
+                server_version = variant.parse_server_version()
                 if last_server_version is not None and server_version < last_server_version:
                     logging.warning("Variant %02d seems to have a lower server version than the previous variant "
                                     "(%s -> %s). Be careful, your world may not load correctly!",
