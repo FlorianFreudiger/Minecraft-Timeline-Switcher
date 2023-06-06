@@ -52,8 +52,8 @@ class Variant:
 
         return version.parse(version_string)
 
-    def generate_compose(self) -> str:
-        with open("../config/docker-compose-template.yml", "r") as template:
+    def generate_compose(self, template_path: str) -> str:
+        with open(template_path, "r") as template:
             compose = template.read()
 
             additional_envs = ""

@@ -40,6 +40,7 @@ output_path = "packwiz_out"
 enable = false
 hostname = "your-portainer-host.com" # omit "https://", it will be included automatically (your server must use https)
 stack_name = "minecraft-timeline-server" # Name of EXISTING stack, create a dummy stack first
+template = "docker-compose-template.yml" # Path to docker-compose template file, relative to config directory
 
 [[portainer.header]]
 name = "X-API-Key"

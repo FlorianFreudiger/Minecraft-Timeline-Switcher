@@ -24,7 +24,7 @@ The `config.toml.example` file must be copied/renamed to `config.toml`.
 If you are just switching between vanilla versions players can use the normal Minecraft Launcher to switch versions
 themselves or players can automate it:
 
-To automatically switch versions and install mods create a MultiMC / Prism Launcher instance by following the
+To automatically switch versions and install mods: create a MultiMC / Prism Launcher instance by following the
 [packwiz-installer instructions](https://packwiz.infra.link/tutorials/installing/packwiz-installer/).
 A webserver is needed to host the pack files. Therefore, a directory inside the web root needs to be accessible
 by this program, for example by hosting a web server on the same host or by mounting the directory remotely.

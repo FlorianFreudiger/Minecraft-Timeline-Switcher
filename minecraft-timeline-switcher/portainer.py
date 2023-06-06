@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import requests
 import logging
 from typing import Any
@@ -11,6 +13,7 @@ class Portainer(UpdateTarget):
     hostname: str
     stack_name: str
     headers: dict[str, str]
+    template_path: str
 
     @staticmethod
     def from_config(config: dict[str, Any]) -> Portainer:
@@ -21,12 +24,17 @@ class Portainer(UpdateTarget):
         for header in config["portainer"]["header"]:
             headers[header["name"]] = header["value"]
 
-        return Portainer(host, stack, headers)
+        template_path = os.path.join("../config", config["portainer"]["template"])
+        if not os.path.isfile(template_path):
+            raise FileNotFoundError(f"Portainer template file not found at {template_path}")
 
-    def __init__(self, hostname: str, stack_name: str, headers: dict[str, str]) -> None:
+        return Portainer(host, stack, headers, template_path)
+
+    def __init__(self, hostname: str, stack_name: str, headers: dict[str, str], template_path: str) -> None:
         self.hostname = hostname
         self.stack_name = stack_name
         self.headers = headers
+        self.template_path = template_path
 
     def get_request(self, endpoint: str):
         url = f"https://{self.hostname}/api/{endpoint}"
@@ -41,7 +49,7 @@ class Portainer(UpdateTarget):
         return response.json()
 
     def update_variant(self, variant: Variant) -> None:
-        compose = variant.generate_compose()
+        compose = variant.generate_compose(self.template_path)
         logging.info(f"Updating Portainer stack {self.stack_name}")
 
         # Get stack id
