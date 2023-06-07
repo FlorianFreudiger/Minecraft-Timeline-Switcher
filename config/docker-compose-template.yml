@@ -1,11 +1,11 @@
 version: '3.5'
 services:
-    minecraft-timeline-server:
+    minecraft-timeline-server: # If you rename this, you must also change network_mode in the backup service
         image: {server_image}
 
         environment:
             # Timezone identifiers: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List
-            #- TZ=Etc/UTC
+            #- &tz TZ=Etc/UTC
 
             # Run as specific user and group id, to avoid permission issues
             #- UID=1000
@@ -37,7 +37,33 @@ services:
             - '25565:25565'
 
         volumes:
-            # Change this to your own path
-            - '/minecraft_data:/data'
+            -   &data-volume
+                type: bind
+                source: /minecraft-timeline/data/ # Change this to your own path
+                target: /data
 
         restart: "unless-stopped"
+
+    minecraft-timeline-backup:
+        image: itzg/mc-backup
+
+        environment:
+            # Use the same timezone as the minecraft server, to use it must be uncommented in both services
+            #- *tz
+
+            # Interval between backups, consider that this might be reset every deployment
+            - BACKUP_INTERVAL=2h
+
+            # Delete backups older than this many days, default is 7
+            #- PRUNE_BACKUPS_DAYS=21
+
+        volumes:
+            -   type: bind
+                source: /minecraft-timeline/backups/ # Change this to your own path
+                target: /backups
+
+            # mount the same volume used by server, but read-only
+            -   <<: *data-volume
+                read_only: true
+
+        network_mode: "service:minecraft-timeline-server"
